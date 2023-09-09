@@ -2,7 +2,7 @@ import { Component } from 'react';
 import Searchbar from './search-bar/Searchbar';
 import fetchImages from './fetch-data';
 import ImageGallery from './image-gallery/ImageGallery';
-import Modal from './modal/Modal';
+import Modal from './Modal/Modal';
 import LoadMore from './load-more/LoadMore';
 
 const perPage = 12;
