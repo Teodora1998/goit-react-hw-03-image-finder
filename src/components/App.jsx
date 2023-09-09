@@ -1,121 +1,101 @@
 import { Component } from 'react';
-import './App.css';
-import { searchImage } from './api/apiPixabay';
-import { Searchbar } from './Searchbar/Searchbar';
-import { ImageGallery } from './ImageGallery/ImageGallery';
-import { Button } from 'components/Button/Button';
-import { Loader } from './Loader/Loader';
-import { Modal } from './Modal/Modal';
-import Notiflix from 'notiflix';
+import Searchbar from './search-bar/Searchbar';
+import fetchImages from './fetch-data';
+import ImageGallery from './image-gallery/ImageGallery';
+import Modal from './modal/Modal';
+import LoadMore from './load-more/LoadMore';
+
+const perPage = 12;
 
 export class App extends Component {
-  constructor() {
-    super();
-    this.state = {
-      search: '',
-      emptyInput: false,
-      images: [],
-      page: 1,
-      total: 1,
-      isLoading: false,
-      error: null,
-      modalIsVisible: false,
-      selectedImages: null,
-    };
-    this.openModal = this.openModal.bind(this);
-    this.closeModal = this.closeModal.bind(this);
-  }
-
-  componentDidUpdate(prevProps, prevState) {
-    const { search: prevSearch } = prevState;
-    const { search: newSearch } = this.state;
-
-    if (newSearch !== prevSearch) {
-      this.handleSearch(newSearch);
-    }
-  }
-  handleSearch = async searchTerm => {
-    if (searchTerm.trim().length === 0) {
-      this.setState({ emptyInput: true });
-      return;
-    }
-    this.setState({
-      search: searchTerm,
-      emptyInput: false,
-      page: 1,
-      images: [],
-      isLoading: true,
-      error: null,
-      total: 1,
+  state = {
+    filter: '',
+    images: [],
+    pageNum: 1,
+    maxPages: null,
+    largeImageURL: null,
+    modalIsVisible: false,
+  };
+  addToFilter = value => {
+    this.setState(() => {
+      return { images: [], filter: value, pageNum: 1 };
     });
-
-    try {
-      const data = await searchImage(searchTerm, 1);
-      this.setState({
-        images: data.hits,
-        total: data.total,
-        isLoading: false,
-      });
-    } catch (error) {
-      this.setState({
-        error,
-        isLoading: false,
-      });
-    }
   };
 
-  handleLoadMore = async () => {
-    const { search, page } = this.state;
-    const nextPage = page + 1;
-    this.setState({ isLoading: true });
-    try {
-      const data = await searchImage(search, nextPage);
-      this.setState(prevState => ({
-        images: [...prevState.images, ...data.hits],
-        page: nextPage,
-        isLoading: false,
-      }));
-    } catch (error) {
-      this.setState({ error, isLoading: false });
-    }
+  closeModal = () => {
+    this.setState({
+      modalIsVisible: false,
+      largeImageURL: null,
+    });
   };
 
-  openModal(id) {
+  openModal = largeImageURL => {
     this.setState({
       modalIsVisible: true,
-      selectedImages: id,
+      largeImageURL,
     });
-  }
+  };
 
-  closeModal() {
-    this.setState({
-      modalIsVisible: false,
-      selectedImages: null,
+  addMovies = async (
+    prevImagesLength,
+    thisImagesLength,
+    prevFilter,
+    thisFilter
+  ) => {
+    if (prevImagesLength === thisImagesLength || prevFilter !== thisFilter) {
+      const { filter, pageNum, images } = this.state;
+      const response = await fetchImages(filter, pageNum);
+      const { totalHits, hits } = response;
+      const maxPages = Math.ceil(totalHits / perPage);
+      const newImages = [...images, ...hits];
+      this.setState({ images: newImages, maxPages });
+    }
+  };
+
+  updatePageNum = () => {
+    this.setState(prevState => {
+      if (prevState.pageNum === this.state.maxPages) {
+        return { pageNum: 1 };
+      }
+      return { pageNum: prevState.pageNum + 1 };
     });
-  }
+  };
 
+  componentDidUpdate(prevProps, prevState) {
+    const prevImagesLength = prevState.images.length;
+    const thisImagesLength = this.state.images.length;
+    const prevFilter = prevState.filter;
+    const thisFilter = this.state.filter;
+    if (this.state.modalIsVisible === prevState.modalIsVisible) {
+      this.addMovies(
+        prevImagesLength,
+        thisImagesLength,
+        prevFilter,
+        thisFilter
+      );
+    }
+  }
   render() {
-    const { images, isLoading, error, emptyInput, total, page } = this.state;
     return (
       <div className="App">
-        <Searchbar onSearch={this.handleSearch} />
-        {emptyInput && Notiflix.Notify.failure('Please insert search term!')}
-        {error &&
-          Notiflix.Notify.failure(
-            'Ops something went wrong please try again later!'
-          )}
-        {isLoading && <Loader />}
-        {images.length > 0 && (
-          <ImageGallery openModal={this.openModal} images={images} />
+        <Searchbar
+          addToFilter={this.addToFilter.bind(this)}
+          filter={this.state.filter}
+        />
+        {this.state.images.length > 0 && (
+          <ImageGallery
+            images={this.state.images}
+            openModal={this.openModal.bind(this)}
+          />
         )}
-        {total / 12 > page && <Button loadMore={this.handleLoadMore} />}
-        {this.state.modalIsVisible && this.state.selectedImages && (
+        {this.state.modalIsVisible && (
           <Modal
-            openModal={this.openModal}
-            imageURL={this.state.selectedImages.largeImageURL}
-            tag={this.state.selectedImages.tags}
+            largeImageURL={this.state.largeImageURL}
             closeModal={this.closeModal}
           />
+        )}
+        {this.state.maxPages > 1 && this.state.images.length > 0 && (
+          <LoadMore updatePageNum={this.updatePageNum.bind(this)} />
         )}
       </div>
     );
