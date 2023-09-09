@@ -1,5 +1,5 @@
 import PropTypes from 'prop-types';
-import css from './ImageGalleryItem.module.css';
+import './ImageGalleryItem.css';
 
 export const ImageGalleryItem = ({ images, openModal }) => {
   const handleClick = image => {
@@ -11,11 +11,11 @@ export const ImageGalleryItem = ({ images, openModal }) => {
         <li
           key={image.id}
           onClick={() => handleClick(image)}
-          className={css.ImageGalleryItem}
+          className="ImageGalleryItem"
         >
           <img
             loading="lazy"
-            className={css.ImageGalleryItem_img}
+            className="ImageGalleryItem_img"
             src={image.webformatURL}
             alt={image.tags}
           />

@@ -1,6 +1,6 @@
 import { Component } from 'react';
 import PropTypes from 'prop-types';
-import css from './Searchbar.module.css';
+import './Searchbar.css';
 
 export class Searchbar extends Component {
   state = {
@@ -20,14 +20,12 @@ export class Searchbar extends Component {
   };
   render = () => {
     return (
-      <header className={css.Searchbar} onSubmit={this.handleSubmit}>
-        <form className={css.SearchForm}>
-          <button type="submit" className={css.SearchForm_button}></button>
+      <header className="Searchbar" onSubmit={this.handleSubmit}>
+        <form className="SearchForm">
+          <button type="submit" className="SearchForm_button"></button>
           <input
-            className={css.SearchForm_input}
+            className="SearchForm_input"
             type="text"
-            // autocomplete="off"
-            // autofocus
             placeholder="Search images and photos"
             value={this.state.searchTerm}
             onChange={this.handleChange}

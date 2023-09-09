@@ -1,18 +1,19 @@
 import { Component } from 'react';
-import css from './App.module.css';
-import { imgSearch } from './api/apiPixabay';
+import './App.css';
+import { searchImage } from './api/apiPixabay';
 import { Searchbar } from './Searchbar/Searchbar';
 import { ImageGallery } from './ImageGallery/ImageGallery';
 import { Button } from 'components/Button/Button';
 import { Loader } from './Loader/Loader';
 import { Modal } from './Modal/Modal';
+import Notiflix from 'notiflix';
 
 export class App extends Component {
   constructor() {
     super();
     this.state = {
       search: '',
-      empty: false,
+      emptyInput: false,
       images: [],
       page: 1,
       total: 1,
@@ -21,7 +22,7 @@ export class App extends Component {
       modalIsVisible: false,
       selectedImages: null,
     };
-    this.openModal = this.openModal.bind(this); 
+    this.openModal = this.openModal.bind(this);
     this.closeModal = this.closeModal.bind(this);
   }
 
@@ -33,16 +34,14 @@ export class App extends Component {
       this.handleSearch(newSearch);
     }
   }
-
-  //cautarea
   handleSearch = async searchTerm => {
     if (searchTerm.trim().length === 0) {
-      this.setState({ empty: true }); 
+      this.setState({ emptyInput: true });
       return;
     }
     this.setState({
       search: searchTerm,
-      empty: false,
+      emptyInput: false,
       page: 1,
       images: [],
       isLoading: true,
@@ -51,7 +50,7 @@ export class App extends Component {
     });
 
     try {
-      const data = await imgSearch(searchTerm, 1);
+      const data = await searchImage(searchTerm, 1);
       this.setState({
         images: data.hits,
         total: data.total,
@@ -64,13 +63,13 @@ export class App extends Component {
       });
     }
   };
-   
+
   handleLoadMore = async () => {
     const { search, page } = this.state;
     const nextPage = page + 1;
     this.setState({ isLoading: true });
     try {
-      const data = await imgSearch(search, nextPage);
+      const data = await searchImage(search, nextPage);
       this.setState(prevState => ({
         images: [...prevState.images, ...data.hits],
         page: nextPage,
@@ -84,28 +83,34 @@ export class App extends Component {
   openModal(id) {
     this.setState({
       modalIsVisible: true,
-      selectedImages: id,  
+      selectedImages: id,
     });
   }
 
   closeModal() {
     this.setState({
       modalIsVisible: false,
-      selectedImages: null,  
+      selectedImages: null,
     });
   }
-  
+
   render() {
-    const { images, isLoading, error, empty, total, page } = this.state;
+    const { images, isLoading, error, emptyInput, total, page } = this.state;
     return (
-      <div className={css.App}>
+      <div className="App">
         <Searchbar onSearch={this.handleSearch} />
-        {empty && <p className={css.empty}>Please enter a search term.</p>}
-        {error && <p>Oops! Something went wrong: {error.message}</p>}
+        {emptyInput && Notiflix.Notify.failure('Please insert search term!')}
+        {error &&
+          Notiflix.Notify.failure(
+            'Ops something went wrong please try again later!'
+          )}
         {isLoading && <Loader />}
-        {images.length > 0 && (<ImageGallery openModal={this.openModal} images={images} />)}
-        {total/12 > page && <Button onClickLoadMore={this.handleLoadMore} />}
-        {this.state.modalIsVisible && this.state.selectedImages && (<Modal
+        {images.length > 0 && (
+          <ImageGallery openModal={this.openModal} images={images} />
+        )}
+        {total / 12 > page && <Button loadMore={this.handleLoadMore} />}
+        {this.state.modalIsVisible && this.state.selectedImages && (
+          <Modal
             openModal={this.openModal}
             imageURL={this.state.selectedImages.largeImageURL}
             tag={this.state.selectedImages.tags}

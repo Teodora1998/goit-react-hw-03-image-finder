@@ -1,14 +1,14 @@
 import PropTypes from 'prop-types';
-import css from './ImageGallery.module.css';
+import './ImageGallery.css';
 import { ImageGalleryItem } from '../ImageGalleryItem/ImageGalleryItem';
 
 export const ImageGallery = ({ images, openModal }) => {
   return (
-    <>
-      <ul className={css.ImageGallery}>
+    <div className="gallery">
+      <ul className="ImageGallery">
         <ImageGalleryItem openModal={openModal} images={images} />
       </ul>
-    </>
+    </div>
   );
 };
 
